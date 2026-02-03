@@ -1,134 +1,239 @@
 # Nostr Gaming Engine
 
-A platform for building peer-to-peer turn-based games on Nostr with Lightning payments.
+Build peer-to-peer turn-based games on Nostr with Lightning payments.
 
-## Overview
+## What You Can Build
 
-Nostr Gaming Engine provides the infrastructure to build serverless, censorship-resistant games where:
-- **Game state** is stored on Nostr relays (Kind 30078 replaceable events)
-- **Identity** uses Nostr public keys (NIP-07, NIP-46, or direct key)
-- **Privacy** is ensured via NIP-44 encryption between players
-- **Notifications** are sent as Lightning Zaps (NIP-57) or encrypted DMs (NIP-04)
-- **Payments** use NWC (NIP-47), Breez SDK Spark, or Bitcoin Connect
+Use this engine to create any two-player turn-based game:
 
-No central server. No accounts. Just players and the Nostr network.
+- **Chess** - Classic strategy with move validation
+- **Go** - Territory control with capture detection
+- **Checkers** - Jump chains and king promotions
+- **Backgammon** - Dice rolls and bearing off
+- **Tic-Tac-Toe** - Simple starter project
+- **Card Games** - Poker, Blackjack with hidden hands
+- **And more** - Any game with alternating turns
+
+## Why Nostr?
+
+Traditional online games require servers, accounts, and trust. Nostr Gaming Engine is different:
+
+| Traditional | Nostr Gaming Engine |
+|-------------|---------------------|
+| Central server required | Serverless - games live on relays |
+| Create account, verify email | Just your Nostr keys |
+| Server sees all game data | End-to-end encrypted between players |
+| Push notifications | Lightning zaps as notifications |
+| Payment processing fees | Direct peer-to-peer Lightning |
+| Server can shut down | Games persist on any relay |
+
+## How It Works
+
+```
+┌─────────────┐                    ┌─────────────┐
+│  Player A   │                    │  Player B   │
+│  (React)    │                    │  (React)    │
+└──────┬──────┘                    └──────┬──────┘
+       │                                  │
+       │  1. Create game                  │
+       │  2. Encrypt state                │
+       │  3. Publish to relays            │
+       ▼                                  │
+┌──────────────────────────────────────────────────┐
+│                  Nostr Relays                    │
+│           Kind 30078 Game Events                 │
+│         (encrypted, replaceable)                 │
+└──────────────────────────────────────────────────┘
+       │                                  │
+       │         4. Subscribe             │
+       │         5. Decrypt               │
+       │         6. Render game           │
+       │                                  ▼
+       │                           ┌──────────────┐
+       │  7. Zap notification ──── │ Lightning    │
+       │     "Your turn!"          │ Network      │
+       └──────────────────────────►└──────────────┘
+```
+
+## Quick Start
+
+### 1. Start with the Template
+
+```bash
+# Clone the repo
+git clone https://github.com/tkhumush/Nostr-Gaming-Engine.git
+cd Nostr-Gaming-Engine
+
+# Copy the starter template
+cp -r templates/game-starter my-chess-game
+cd my-chess-game
+
+# Install and run
+pnpm install
+pnpm dev
+```
+
+### 2. Define Your Game State
+
+```typescript
+// src/types/game.ts
+export interface ChessState {
+  board: Piece[][];           // 8x8 grid
+  turn: 'white' | 'black';
+  castlingRights: CastlingRights;
+  enPassantSquare: Square | null;
+  halfMoveClock: number;
+  fullMoveNumber: number;
+}
+
+export interface ChessMove {
+  from: Square;
+  to: Square;
+  promotion?: PieceType;
+}
+```
+
+### 3. Implement Your Game Engine
+
+```typescript
+// src/engine/GameEngine.ts
+export function validateMove(state: ChessState, move: ChessMove): boolean {
+  // Your chess logic here
+}
+
+export function applyMove(state: ChessState, move: ChessMove): ChessState {
+  // Return new state after move
+}
+
+export function isGameOver(state: ChessState): boolean {
+  return isCheckmate(state) || isStalemate(state) || isDraw(state);
+}
+```
+
+### 4. Connect to Nostr
+
+```typescript
+// The engine handles all the Nostr complexity
+import { useNostr, useWallet, NostrSync } from '@nostr-gaming-engine/core';
+
+function ChessGame({ gameId, opponentPubkey }) {
+  const { user } = useNostr();
+  const sync = new NostrSync(gameId, opponentPubkey);
+
+  // Publish moves - automatically encrypted
+  await sync.publishGameState(newState, previousEventId);
+
+  // Subscribe to opponent moves - automatically decrypted
+  sync.subscribe((event) => {
+    setGameState(event.decryptedContent);
+  });
+}
+```
+
+## Core Features
+
+### Authentication
+Multiple ways to connect:
+- **NIP-07** - Browser extensions (Alby, nos2x)
+- **NIP-46** - Remote signer (Nostr Connect)
+- **Direct key** - For development/testing
+
+### Game Sync
+The `NostrSync` class handles:
+- Publishing encrypted game state to relays
+- Subscribing to opponent's moves
+- Turn validation via hash chains
+- Automatic reconnection
+
+### Wallet Integration
+Three wallet options built-in:
+- **NWC** - Nostr Wallet Connect (Alby, etc.)
+- **Spark** - Breez SDK self-custodial wallet
+- **Bitcoin Connect** - External wallet connection
+
+### Notifications
+Alert players when it's their turn:
+- Lightning zaps (with custom amounts)
+- Encrypted DMs (Kind 4)
+- Browser notifications
 
 ## Repository Structure
 
 ```
 nostr-gaming-engine/
-├── packages/
-│   └── core/              # @nostr-gaming-engine/core - Reusable platform
-├── examples/
-│   └── scrabble/          # Words With Zaps - Full Scrabble implementation
-├── templates/
-│   └── game-starter/      # Minimal template for new games
-└── docs/                  # Comprehensive documentation
-```
-
-## Quick Start
-
-### Using the Scrabble Example
-
-```bash
-# Install pnpm if needed
-npm install -g pnpm
-
-# Install dependencies
-pnpm install
-
-# Start the Scrabble game
-pnpm dev
-```
-
-### Building Your Own Game
-
-```bash
-# Copy the starter template
-cp -r templates/game-starter my-game
-cd my-game
-
-# Install dependencies
-pnpm install
-
-# Start development
-pnpm dev
-```
-
-See [docs/00-getting-started.md](docs/00-getting-started.md) for a complete walkthrough.
-
-## Core Package
-
-The `@nostr-gaming-engine/core` package provides:
-
-- **Nostr Infrastructure**: NDK wrapper, authentication, relay management
-- **Game Sync**: NostrSync class for publishing/subscribing to game state
-- **Encryption**: NIP-44 encryption for private game data
-- **Wallet Integration**: NWC, Breez SDK Spark, Bitcoin Connect
-- **React Hooks**: useNostr, useWallet for easy integration
-- **Profile Management**: Fetch and update Nostr profiles
-
-```typescript
-import {
-  useNostr,
-  useWallet,
-  NostrSync,
-  fetchProfile,
-} from '@nostr-gaming-engine/core';
+├── packages/core/           # The engine - use this in your game
+│   └── src/
+│       ├── nostr/          # Client, sync, encryption, profiles
+│       ├── wallet/         # NWC, Spark, Bitcoin Connect
+│       ├── hooks/          # useNostr, useWallet
+│       └── types/          # Shared TypeScript types
+│
+├── examples/scrabble/      # Full game implementation
+│   └── src/
+│       ├── engine/         # Scrabble-specific game logic
+│       ├── components/     # React UI components
+│       └── hooks/          # useGame hook
+│
+├── templates/game-starter/ # Start here for new games
+│   └── src/
+│       ├── types/          # Game state skeleton
+│       ├── engine/         # GameEngine skeleton
+│       └── hooks/          # useGame template
+│
+└── docs/                   # Comprehensive documentation
 ```
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](docs/00-getting-started.md) | Build your first game step-by-step |
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/00-getting-started.md) | Build a Chess game step-by-step |
 | [Architecture](docs/01-architecture-overview.md) | System design and data flow |
 | [Authentication](docs/02-authentication-and-identity.md) | NIP-07, NIP-46, key management |
-| [Relay Management](docs/03-relay-management.md) | Relay discovery and connection |
-| [Event System](docs/04-event-system.md) | Publishing and subscribing to events |
-| [Encryption](docs/05-encryption.md) | NIP-44 encryption details |
-| [Game Storage](docs/06-game-session-storage.md) | Kind 30078 game state format |
-| [Real-time Sync](docs/07-real-time-sync.md) | NostrSync class usage |
-| [User Profiles](docs/08-user-profiles.md) | Profile fetching and display |
-| [Wallet & Zaps](docs/09-wallet-and-zaps.md) | Lightning wallet integration |
-| [Notifications](docs/10-notifications.md) | Turn notifications via DMs/zaps |
-| [Matchmaking](docs/11-matchmaking-and-lobby.md) | Game discovery and lobby |
-| [Settings](docs/12-app-settings.md) | User preferences storage |
-| [Game Contract](docs/13-game-interface-contract.md) | Required game implementation |
-| [Extensibility](docs/14-extensibility.md) | Adding new features |
+| [Game Storage](docs/06-game-session-storage.md) | How game state is stored on Nostr |
+| [Real-time Sync](docs/07-real-time-sync.md) | NostrSync class deep dive |
+| [Wallet & Zaps](docs/09-wallet-and-zaps.md) | Lightning integration |
+| [Game Contract](docs/13-game-interface-contract.md) | What your game must implement |
 
-## Features
+[View all documentation →](docs/)
 
-- **Multi-wallet Support**: NWC, Breez SDK Spark, Bitcoin Connect
-- **Cloud Backup**: Wallet credentials encrypted on Nostr
-- **Profile Management**: Fetch, cache, and update user profiles
-- **Real-time Sync**: Subscriptions with automatic reconnection
-- **Relay Management**: User relay lists (NIP-65), multi-relay publishing
+## Example: Words With Zaps
 
-## Examples
+The `examples/scrabble/` directory contains a complete Scrabble implementation:
 
-### Words With Zaps (Scrabble)
-
-A full-featured Scrabble implementation demonstrating:
 - 15x15 board with premium squares
-- Complete scoring logic with bingo bonus
+- Full scoring with bingo bonus
 - Tile exchange and passing
+- Dictionary validation
 - Game sharing via URL
 - Zap notifications on moves
+
+Run it:
+```bash
+pnpm install
+pnpm dev
+```
 
 ## Requirements
 
 - Node.js 18+
-- pnpm (recommended) or npm
-- A Nostr identity (NIP-07 extension or private key)
-- Optional: Lightning wallet for zap notifications
+- pnpm
+- Nostr identity (browser extension or private key)
+- Lightning wallet (optional, for zap notifications)
 
 ## Tech Stack
 
-- **Platform**: React 18 + TypeScript
+- **UI**: React 18 + TypeScript + Vite
 - **Nostr**: @nostr-dev-kit/ndk + nostr-tools
-- **Build**: Vite + pnpm workspaces
-- **Wallet**: NWC, Breez SDK, Bitcoin Connect
+- **Wallets**: NWC, Breez SDK Spark, Bitcoin Connect
+- **Build**: pnpm workspaces
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
