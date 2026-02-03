@@ -1,0 +1,29 @@
+{
+  "name": "@nostr-gaming-engine/example-scrabble",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Words With Zaps - Scrabble-like game built on Nostr Gaming Engine",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nostr-gaming-engine/core": "workspace:*",
+    "lottie-react": "^2.4.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.1"
+  }
+}

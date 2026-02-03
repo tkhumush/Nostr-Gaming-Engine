@@ -1,0 +1,77 @@
+{
+  "name": "@nostr-gaming-engine/core",
+  "version": "0.1.0",
+  "description": "Nostr Gaming Engine - Platform for building P2P turn-based games on Nostr with Lightning payments",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./nostr": {
+      "import": "./dist/nostr/index.js",
+      "types": "./dist/nostr/index.d.ts"
+    },
+    "./wallet": {
+      "import": "./dist/wallet/index.js",
+      "types": "./dist/wallet/index.d.ts"
+    },
+    "./hooks": {
+      "import": "./dist/hooks/index.js",
+      "types": "./dist/hooks/index.d.ts"
+    },
+    "./settings": {
+      "import": "./dist/settings/index.js",
+      "types": "./dist/settings/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "dependencies": {
+    "@breeztech/breez-sdk-spark": "^0.1.2",
+    "@getalby/bitcoin-connect": "^3.8.2",
+    "@noble/hashes": "^1.6.1",
+    "@nostr-dev-kit/ndk": "^2.12.0",
+    "bech32": "^2.0.0",
+    "bip39": "^3.1.0",
+    "buffer": "^6.0.3",
+    "nostr-tools": "^2.10.4",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.6.3"
+  },
+  "keywords": [
+    "nostr",
+    "gaming",
+    "p2p",
+    "lightning",
+    "bitcoin",
+    "nip-07",
+    "nip-44",
+    "nip-47",
+    "nip-57"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/nostr-gaming-engine.git",
+    "directory": "packages/core"
+  }
+}
